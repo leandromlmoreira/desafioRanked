@@ -1,266 +1,270 @@
 import './style.css'
-import { evaluateRank, RANKS } from './rankTier'
+import { emblemDataUrl } from './art/emblems'
+import { buildOwlPortrait } from './art/props'
+import { Chiptune } from './audio/chiptune'
+import { context2d } from './pixel/canvas'
+import { RANKS, evaluateRank, rankRangeLabel, type RankProgress } from './rankTier'
+import { Dialog } from './ui/dialog'
+import { bindHoldButton } from './ui/holdButton'
+import { composeMessage, formatBalance, type ChangeKind } from './ui/messages'
+import { loadRecord, saveRecord, shareUrl, type JournalRecord } from './ui/persistence'
+import { STATION_DISTANCES } from './world/layout'
+import { Scene } from './world/scene'
 
-interface State {
-  wins: number
-  losses: number
-  soundOn: boolean
+const PROGRESS_SEGMENTS = 12
+const MAX_COUNT = 9999
+
+function element<T extends HTMLElement>(id: string): T {
+  const found = document.getElementById(id)
+  if (!found) throw new Error(`Elemento #${id} não encontrado`)
+  return found as T
 }
 
-const state: State = { wins: 0, losses: 0, soundOn: false }
-let previousRankIndex = evaluateRank(state.wins, state.losses).rankIndex
+const stage = element<HTMLElement>('stage')
+const scene = new Scene(element<HTMLCanvasElement>('scene'))
+const audio = new Chiptune()
+const dialog = new Dialog(element('dialog-text'), () => audio.play('text'))
 
-function sceneSvg(): string {
-  return `
-    <svg viewBox="0 0 160 100" shape-rendering="crispEdges" role="img" aria-label="Vilarejo pixel art ao entardecer">
-      <rect width="160" height="60" fill="#33224a"/>
-      <rect width="160" height="20" y="20" fill="#5c3a68"/>
-      <rect width="160" height="14" y="40" fill="#a2537a"/>
-      <rect width="160" height="10" y="50" fill="#ff9d5c"/>
-      <rect x="18" y="10" width="8" height="8" fill="#ffe6a8"/>
-      <rect x="0" y="58" width="160" height="10" fill="#3a2140"/>
-      <rect x="0" y="66" width="160" height="34" fill="#241329"/>
-      <rect x="4" y="30" width="10" height="34" fill="#3a2417"/>
-      <rect x="2" y="24" width="14" height="8" fill="#4a5c34"/>
-      <rect x="130" y="20" width="12" height="44" fill="#3a2417"/>
-      <rect x="127" y="12" width="18" height="10" fill="#4a5c34"/>
-      <g>
-        <rect x="55" y="42" width="50" height="26" fill="#6b3a22"/>
-        <rect x="50" y="30" width="60" height="14" fill="#4a2c1f"/>
-        <rect x="76" y="18" width="8" height="14" fill="#4a2c1f"/>
-        <g class="smoke">
-          <rect x="78" y="10" width="3" height="3" fill="#cfc9d6"/>
-          <rect x="78" y="10" width="3" height="3" fill="#cfc9d6"/>
-          <rect x="78" y="10" width="3" height="3" fill="#cfc9d6"/>
-        </g>
-        <rect class="window-glow" x="62" y="48" width="10" height="10" fill="#ffdca8"/>
-        <rect class="window-glow" x="88" y="48" width="10" height="10" fill="#ffdca8"/>
-        <rect x="74" y="52" width="12" height="16" fill="#2f1c12"/>
-      </g>
-      <g transform="translate(30,74)">
-        <rect x="-2" y="10" width="4" height="4" fill="#5a3a2a"/>
-        <rect x="6" y="10" width="4" height="4" fill="#5a3a2a"/>
-        <g class="flame">
-          <rect x="-1" y="0" width="10" height="4" fill="#ff7b3f"/>
-          <rect x="1" y="-4" width="6" height="5" fill="#ffd166"/>
-          <rect x="2" y="-7" width="4" height="4" fill="#fff3c4"/>
-        </g>
-      </g>
-      <rect x="0" y="94" width="160" height="6" fill="#1a0e1f"/>
-    </svg>
-  `
+const winsInput = element<HTMLInputElement>('wins-input')
+const lossesInput = element<HTMLInputElement>('losses-input')
+const balanceLabel = element('balance')
+const progressNext = element('progress-next')
+const progressTrack = element('progress-track')
+const ranksGrid = element<HTMLOListElement>('ranks-grid')
+const hudEmblem = element<HTMLImageElement>('hud-emblem')
+const hudRankName = element('hud-rank-name')
+const hudRankRange = element('hud-rank-range')
+const toast = element('rank-toast')
+const toastEmblem = element<HTMLImageElement>('rank-toast-emblem')
+const toastName = element('rank-toast-name')
+const phaseLabel = element('phase-label')
+
+const emblemUrls = RANKS.map((_, index) => emblemDataUrl(index))
+
+const record: JournalRecord = loadRecord()
+let settledRankIndex = evaluateRank(record.wins, record.losses).rankIndex
+let pendingKind: ChangeKind = 'intro'
+let messageTimer: number | null = null
+let awaitingArrival = false
+let toastTimer: number | null = null
+
+function pathDistance(progress: RankProgress): number {
+  const start = STATION_DISTANCES[progress.rankIndex]
+  const end = STATION_DISTANCES[progress.rankIndex + 1]
+  return end === undefined ? start : start + (end - start) * progress.fractionToNext
 }
 
-function characterSvg(): string {
-  return `
-    <svg viewBox="0 0 16 16" shape-rendering="crispEdges" role="img" aria-label="Personagem do jogador">
-      <rect x="5" y="1" width="6" height="5" fill="#ffd9b3"/>
-      <rect x="4" y="0" width="8" height="2" fill="#5a3a2a"/>
-      <rect x="4" y="6" width="8" height="6" fill="#ff7b3f"/>
-      <rect x="3" y="7" width="2" height="4" fill="#ffd9b3"/>
-      <rect x="11" y="7" width="2" height="4" fill="#ffd9b3"/>
-      <rect x="4" y="12" width="3" height="4" fill="#3a2417"/>
-      <rect x="9" y="12" width="3" height="4" fill="#3a2417"/>
-    </svg>
-  `
-}
-
-const app = document.querySelector<HTMLDivElement>('#app')
-if (!app) {
-  throw new Error('Elemento raiz #app não encontrado')
-}
-
-app.innerHTML = `
-  <div class="app-shell">
-    <h1 class="title">RankTier</h1>
-    <p class="subtitle">A vila aconchegante das patentes</p>
-    <div class="stage">
-      <div class="pixel-panel scene-frame">${sceneSvg()}</div>
-      <div class="pixel-panel board-panel">
-        <p class="board-title">Quadro de Patentes</p>
-        <div class="ladder" id="ladder">
-          ${RANKS.map(
-            (rank, index) => `
-            <div class="rung" data-rank-index="${index}" style="--rung-color:${rank.color}">
-              <span class="rung-dot" style="--rung-color:${rank.color}"></span>
-              <span>${rank.name}</span>
-            </div>
-          `
-          ).join('')}
-          <div class="character" id="character">${characterSvg()}</div>
-          <div class="confetti-layer" id="confetti"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="pixel-panel">
-      <div class="controls">
-        <div class="stat-card">
-          <span class="stat-label" id="wins-label">Vitórias</span>
-          <div class="stat-row">
-            <button class="pixel-btn is-negative" id="wins-dec" aria-label="Diminuir vitórias">-</button>
-            <input class="stat-input" id="wins-input" type="number" min="0" step="1" inputmode="numeric" value="0" aria-labelledby="wins-label" />
-            <button class="pixel-btn" id="wins-inc" aria-label="Aumentar vitórias">+</button>
-          </div>
-          <span class="hint" id="wins-hint"></span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label" id="losses-label">Derrotas</span>
-          <div class="stat-row">
-            <button class="pixel-btn is-negative" id="losses-dec" aria-label="Diminuir derrotas">-</button>
-            <input class="stat-input" id="losses-input" type="number" min="0" step="1" inputmode="numeric" value="0" aria-labelledby="losses-label" />
-            <button class="pixel-btn" id="losses-inc" aria-label="Aumentar derrotas">+</button>
-          </div>
-          <span class="hint" id="losses-hint"></span>
-        </div>
-      </div>
-
-      <div class="summary">
-        <span class="balance" id="balance">Saldo: 0</span>
-        <span class="rank-badge" id="rank-badge">Ferro</span>
-      </div>
-      <p class="progress-line" id="progress-line" aria-live="polite"></p>
-
-      <div class="footer-row">
-        <label class="sound-toggle" for="sound-toggle">
-          <input type="checkbox" id="sound-toggle" />
-          Som
-        </label>
-      </div>
-    </div>
-  </div>
-`
-
-const winsInput = document.querySelector<HTMLInputElement>('#wins-input')!
-const lossesInput = document.querySelector<HTMLInputElement>('#losses-input')!
-const winsHint = document.querySelector<HTMLSpanElement>('#wins-hint')!
-const lossesHint = document.querySelector<HTMLSpanElement>('#losses-hint')!
-const balanceEl = document.querySelector<HTMLSpanElement>('#balance')!
-const rankBadge = document.querySelector<HTMLSpanElement>('#rank-badge')!
-const progressLine = document.querySelector<HTMLParagraphElement>('#progress-line')!
-const ladder = document.querySelector<HTMLDivElement>('#ladder')!
-const character = document.querySelector<HTMLDivElement>('#character')!
-const confettiLayer = document.querySelector<HTMLDivElement>('#confetti')!
-const soundToggle = document.querySelector<HTMLInputElement>('#sound-toggle')!
-
-let audioContext: AudioContext | null = null
-
-function playRankUpChime(): void {
-  if (!state.soundOn) return
-  audioContext ??= new AudioContext()
-  const notes = [523.25, 659.25, 783.99]
-  notes.forEach((frequency, index) => {
-    const oscillator = audioContext!.createOscillator()
-    const gain = audioContext!.createGain()
-    oscillator.type = 'square'
-    oscillator.frequency.value = frequency
-    const startTime = audioContext!.currentTime + index * 0.09
-    gain.gain.setValueAtTime(0.06, startTime)
-    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.18)
-    oscillator.connect(gain).connect(audioContext!.destination)
-    oscillator.start(startTime)
-    oscillator.stop(startTime + 0.2)
+function buildRanksGrid(): void {
+  ranksGrid.innerHTML = RANKS.map(
+    (rank, index) => `
+      <li>
+        <button class="rank-tile" type="button" data-rank-index="${index}" style="--rank-color:${rank.color};--rank-glow:${rank.glow}">
+          <img src="${emblemUrls[index]}" alt="" width="48" height="48" />
+          <span class="rank-tile-name">${rank.name}</span>
+          <span class="rank-tile-range">${rankRangeLabel(index)}</span>
+        </button>
+      </li>`
+  ).join('')
+  ranksGrid.querySelectorAll<HTMLButtonElement>('.rank-tile').forEach((tile) => {
+    tile.addEventListener('click', () => travelTo(Number(tile.dataset.rankIndex)))
   })
 }
 
-function spawnConfetti(color: string): void {
-  confettiLayer.innerHTML = ''
-  const particleCount = 14
-  for (let i = 0; i < particleCount; i++) {
-    const particle = document.createElement('span')
-    particle.className = 'confetto'
-    const angle = (Math.PI / particleCount) * i * 2 - Math.PI / 2
-    const distance = 26 + Math.random() * 22
-    particle.style.setProperty('--c', color)
-    particle.style.setProperty('--dx', `${Math.cos(angle) * distance}px`)
-    particle.style.setProperty('--dy', `${Math.sin(angle) * distance - 20}px`)
-    particle.style.setProperty('--rot', `${Math.random() * 360}deg`)
-    confettiLayer.appendChild(particle)
-  }
-  window.setTimeout(() => {
-    confettiLayer.innerHTML = ''
-  }, 900)
+function buildProgressTrack(): void {
+  progressTrack.innerHTML = Array.from({ length: PROGRESS_SEGMENTS }, () => '<span class="segment"></span>').join('')
 }
 
-function positionCharacter(rankIndex: number, didRankUp: boolean): void {
-  const rung = ladder.querySelector<HTMLDivElement>(`.rung[data-rank-index="${rankIndex}"]`)
-  if (!rung) return
-  const previousTop = character.style.getPropertyValue('--current-top') || '0px'
-  const targetTop = rung.offsetTop + rung.offsetHeight / 2 - character.offsetHeight / 2
-  character.style.transform = `translateY(${targetTop}px)`
-  character.style.setProperty('--current-top', `${targetTop}px`)
-  if (didRankUp) {
-    character.style.setProperty('--hop-start', previousTop)
-    character.style.setProperty('--hop-end', `${targetTop}px`)
-    character.classList.remove('is-jumping')
-    void character.offsetWidth
-    character.classList.add('is-jumping')
-  }
-}
-
-function parseIntOrZero(rawValue: string): number {
-  const parsed = Number.parseInt(rawValue, 10)
-  return Number.isNaN(parsed) ? 0 : parsed
-}
-
-function render(): void {
-  const progress = evaluateRank(state.wins, state.losses)
+function renderProgress(progress: RankProgress): void {
   const rank = RANKS[progress.rankIndex]
-  const didRankUp = progress.rankIndex > previousRankIndex
+  const filled = Math.round(progress.fractionToNext * PROGRESS_SEGMENTS)
+  progressTrack.style.setProperty('--rank-color', rank.color)
+  progressTrack.style.setProperty('--rank-glow', rank.glow)
+  progressTrack.querySelectorAll('.segment').forEach((segment, index) => segment.classList.toggle('is-filled', index < filled))
+  progressTrack.setAttribute('aria-valuenow', String(Math.round(progress.fractionToNext * 100)))
+  progressNext.textContent =
+    progress.winsToNext === null ? 'Topo alcançado' : `Faltam ${progress.winsToNext} para ${progress.nextRankName}`
+  balanceLabel.textContent = formatBalance(progress.balance)
+  balanceLabel.dataset.sign = progress.balance > 0 ? 'positive' : progress.balance < 0 ? 'negative' : 'zero'
+}
 
-  winsInput.value = String(state.wins)
-  lossesInput.value = String(state.losses)
-  balanceEl.textContent = `Saldo: ${progress.balance}`
-  rankBadge.textContent = progress.level
-  rankBadge.style.setProperty('--rank-color', rank.color)
-
-  progressLine.textContent =
-    progress.winsToNext === null
-      ? 'Patente máxima alcançada! Você é Imortal.'
-      : `Faltam ${progress.winsToNext} vitória${progress.winsToNext === 1 ? '' : 's'} para ${progress.nextRankName}.`
-
-  ladder.querySelectorAll<HTMLDivElement>('.rung').forEach((rung) => {
-    rung.classList.toggle('is-current', Number(rung.dataset.rankIndex) === progress.rankIndex)
+function renderHud(progress: RankProgress): void {
+  hudEmblem.src = emblemUrls[progress.rankIndex]
+  hudRankName.textContent = progress.level
+  hudRankName.style.setProperty('--rank-glow', RANKS[progress.rankIndex].glow)
+  hudRankRange.textContent = `${rankRangeLabel(progress.rankIndex)} vitórias`
+  ranksGrid.querySelectorAll<HTMLButtonElement>('.rank-tile').forEach((tile) => {
+    const index = Number(tile.dataset.rankIndex)
+    tile.classList.toggle('is-locked', index > progress.rankIndex)
+    tile.classList.toggle('is-current', index === progress.rankIndex)
+    tile.setAttribute('aria-label', `${RANKS[index].name}: ${rankRangeLabel(index)} vitórias${index === progress.rankIndex ? ', patente atual' : ''}. Ir até lá.`)
   })
+}
 
-  positionCharacter(progress.rankIndex, didRankUp)
+function render(): RankProgress {
+  const progress = evaluateRank(record.wins, record.losses)
+  if (document.activeElement !== winsInput) winsInput.value = String(record.wins)
+  if (document.activeElement !== lossesInput) lossesInput.value = String(record.losses)
+  renderProgress(progress)
+  renderHud(progress)
+  scene.setRank(progress.rankIndex)
+  scene.walker.target = pathDistance(progress)
+  saveRecord(record)
+  return progress
+}
 
-  if (didRankUp) {
-    spawnConfetti(rank.glow)
-    playRankUpChime()
-  }
+function sayPendingMessage(): void {
+  const progress = evaluateRank(record.wins, record.losses)
+  const kindToSay =
+    progress.rankIndex > settledRankIndex ? 'rankUp' : progress.rankIndex < settledRankIndex ? 'rankDown' : pendingKind
+  settledRankIndex = progress.rankIndex
+  dialog.say(composeMessage(kindToSay, progress, record.wins))
+}
 
-  previousRankIndex = progress.rankIndex
+function scheduleMessage(kind: ChangeKind): void {
+  pendingKind = kind
+  if (messageTimer !== null) window.clearTimeout(messageTimer)
+  messageTimer = window.setTimeout(() => {
+    messageTimer = null
+    const rankChanged = evaluateRank(record.wins, record.losses).rankIndex !== settledRankIndex
+    if (rankChanged && scene.walker.isWalking) {
+      awaitingArrival = true
+      return
+    }
+    sayPendingMessage()
+  }, 260)
+}
+
+function clampCount(value: number): number {
+  return Math.min(MAX_COUNT, Math.max(0, Math.round(Number.isFinite(value) ? value : 0)))
 }
 
 function setWins(value: number): void {
-  state.wins = Math.max(0, value)
-  winsHint.textContent = value < 0 ? 'Valor ajustado para 0.' : ''
+  const next = clampCount(value)
+  if (next === record.wins) return
+  const kind: ChangeKind = next > record.wins ? 'win' : 'winUndo'
+  audio.play(kind === 'win' ? 'win' : 'undo')
+  record.wins = next
   render()
+  scheduleMessage(kind)
 }
 
 function setLosses(value: number): void {
-  state.losses = Math.max(0, value)
-  lossesHint.textContent = value < 0 ? 'Valor ajustado para 0.' : ''
+  const next = clampCount(value)
+  if (next === record.losses) return
+  const kind: ChangeKind = next > record.losses ? 'loss' : 'lossUndo'
+  audio.play(kind === 'loss' ? 'loss' : 'undo')
+  record.losses = next
   render()
+  scheduleMessage(kind)
 }
 
-document.querySelector('#wins-inc')!.addEventListener('click', () => setWins(state.wins + 1))
-document.querySelector('#wins-dec')!.addEventListener('click', () => setWins(state.wins - 1))
-document.querySelector('#losses-inc')!.addEventListener('click', () => setLosses(state.losses + 1))
-document.querySelector('#losses-dec')!.addEventListener('click', () => setLosses(state.losses - 1))
+function travelTo(rankIndex: number): void {
+  audio.play('select')
+  setWins(RANKS[rankIndex].min)
+}
 
-winsInput.addEventListener('input', () => setWins(parseIntOrZero(winsInput.value)))
-lossesInput.addEventListener('input', () => setLosses(parseIntOrZero(lossesInput.value)))
+function showToast(rankIndex: number): void {
+  toastEmblem.src = emblemUrls[rankIndex]
+  toastName.textContent = RANKS[rankIndex].name
+  toast.style.setProperty('--rank-glow', RANKS[rankIndex].glow)
+  toast.classList.remove('is-visible')
+  void toast.offsetWidth
+  toast.classList.add('is-visible')
+  if (toastTimer !== null) window.clearTimeout(toastTimer)
+  toastTimer = window.setTimeout(() => toast.classList.remove('is-visible'), 2200)
+}
 
-soundToggle.addEventListener('change', () => {
-  state.soundOn = soundToggle.checked
-})
+function bindCounters(): void {
+  bindHoldButton(element('wins-inc'), () => setWins(record.wins + 1))
+  bindHoldButton(element('wins-dec'), () => setWins(record.wins - 1))
+  bindHoldButton(element('losses-inc'), () => setLosses(record.losses + 1))
+  bindHoldButton(element('losses-dec'), () => setLosses(record.losses - 1))
+  winsInput.addEventListener('input', () => setWins(Number.parseInt(winsInput.value, 10)))
+  lossesInput.addEventListener('input', () => setLosses(Number.parseInt(lossesInput.value, 10)))
+  ;[winsInput, lossesInput].forEach((input) => {
+    input.addEventListener('focus', () => input.select())
+    input.addEventListener('blur', () => render())
+  })
+}
 
-window.addEventListener('resize', () => {
-  const progress = evaluateRank(state.wins, state.losses)
-  positionCharacter(progress.rankIndex, false)
-})
+function bindToggle(id: string, onChange: (enabled: boolean) => void): void {
+  const button = element<HTMLButtonElement>(id)
+  button.addEventListener('click', () => {
+    const enabled = button.getAttribute('aria-pressed') !== 'true'
+    button.setAttribute('aria-pressed', String(enabled))
+    onChange(enabled)
+  })
+}
 
-render()
-window.setTimeout(() => positionCharacter(previousRankIndex, false), 0)
+function bindActions(): void {
+  bindToggle('music-toggle', (enabled) => audio.setMusic(enabled))
+  bindToggle('sfx-toggle', (enabled) => {
+    audio.setSfx(enabled)
+    audio.play('select')
+  })
+  element('phase-button').addEventListener('click', () => scene.skipToNextPhase())
+  element('dialog').addEventListener('click', () => dialog.finish())
+  const shareButton = element<HTMLButtonElement>('share-button')
+  shareButton.addEventListener('click', async () => {
+    const original = shareButton.textContent
+    try {
+      await navigator.clipboard.writeText(shareUrl(record))
+      shareButton.textContent = 'Link copiado!'
+    } catch {
+      shareButton.textContent = 'Não deu para copiar'
+    }
+    window.setTimeout(() => (shareButton.textContent = original), 1800)
+  })
+  element('reset-button').addEventListener('click', () => {
+    record.wins = 0
+    record.losses = 0
+    render()
+    scheduleMessage('winUndo')
+  })
+  window.addEventListener('keydown', (event) => {
+    if (event.target instanceof HTMLInputElement) return
+    if (event.key === 'ArrowUp') setWins(record.wins + 1)
+    if (event.key === 'ArrowDown') setWins(record.wins - 1)
+  })
+}
+
+function bindScene(): void {
+  scene.walker.onCross((stationIndex, direction) => {
+    if (direction === 1 && stationIndex > 0) {
+      scene.celebrate(stationIndex)
+      audio.play('rankUp')
+      showToast(stationIndex)
+    }
+    if (direction === -1) audio.play('rankDown')
+  })
+  scene.walker.onStep(() => audio.play('step'))
+  scene.walker.onArrive(() => {
+    if (!awaitingArrival) return
+    awaitingArrival = false
+    sayPendingMessage()
+  })
+  scene.onPhaseChange((label) => (phaseLabel.textContent = label))
+  new ResizeObserver(([entry]) => scene.resize(entry.contentRect.width, entry.contentRect.height)).observe(stage)
+}
+
+function paintPortrait(): void {
+  const portrait = element<HTMLCanvasElement>('dialog-portrait')
+  context2d(portrait).drawImage(buildOwlPortrait(), 0, 0)
+}
+
+function boot(): void {
+  element<HTMLImageElement>('brand-mark').src = emblemUrls[3]
+  buildRanksGrid()
+  buildProgressTrack()
+  paintPortrait()
+  bindCounters()
+  bindActions()
+  bindScene()
+  const progress = render()
+  scene.walker.place(pathDistance(progress))
+  scene.snapCamera()
+  scene.start()
+  dialog.say(composeMessage('intro', progress, record.wins))
+}
+
+boot()

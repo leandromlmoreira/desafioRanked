@@ -1,93 +1,69 @@
 # RankTier
 
-[![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/pt-BR/docs/Web/JavaScript)
-[![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
+Um joguinho pixel art em que cada vitória é um passo montanha acima, do Ferro, na vila ao pé da montanha, até o templo Imortal lá no topo.
 
-**[Ver ao vivo](https://leandromlmoreira.github.io/desafioRanked/)**
+**[Ver ao vivo](https://leandromlmoreira.github.io/ranktier/)**
 
-![Preview do front-end RankTier](docs/preview.png)
+![RankTier em ação: o herói sobe a trilha e ganha uma nova patente](docs/preview.gif)
 
-Biblioteca Node.js que calcula a patente competitiva de um jogador a partir do seu histórico de vitórias e derrotas, no estilo dos sistemas de ranqueada usados em jogos multiplayer.
+| Desktop | Celular |
+| --- | --- |
+| ![Tela do RankTier no desktop](docs/preview.png) | ![Tela do RankTier no celular](docs/preview-mobile.png) |
 
-## Front-end: Vila das Patentes
+## Funcionalidades
 
-Em `web/` há uma interface pixel art e aconchegante feita com Vite + TypeScript. O jogador ajusta vitórias e derrotas com botões grandes de jogo, e um personagem sobe uma escadinha de patentes que vai do Ferro ao Imortal, com brilho e confete pixel a cada promoção. A patente é sempre calculada pela função real `classifyHeroSwitch` do arquivo `desafioRanked.js` deste repositório, importada diretamente pelo front (sem duplicar a lógica).
+- **Montanha com parallax em camadas**: céu com dithering, cordilheira distante, nuvens, colinas, a montanha com terraços, cachoeira e pinheiros, e arbustos em primeiro plano, cada camada em uma velocidade.
+- **Ciclo de luz**: o dia passa sozinho de entardecer para noite e amanhecer. As janelas da vila acendem uma a uma, surgem vagalumes, estrelas e lanternas nas estações da trilha. O botão de hora avança para a próxima fase.
+- **Personagem com spritesheet próprio**, desenhado pixel a pixel em canvas, com animação de caminhada, respiração parada e pulo de comemoração.
+- **Escadaria de patentes**: a trilha em zigue-zague tem uma estação por patente. O herói anda até a posição exata do seu progresso dentro da faixa atual e a câmera acompanha.
+- **Emblema detalhado para cada patente** (escudo de ferro rebitado, brasão de bronze, prata com estrela, ouro com coroa e louros, diamante lapidado, lendário alado e imortal em chamas), gerados em canvas.
+- **Subida de patente com festa**: explosão de partículas, tremida de câmera, faixa "Nova patente" e fanfarra.
+- **Caixa de diálogo estilo RPG** com efeito de máquina de escrever: a Mestra Coruja avisa "Faltam 3 vitórias para Ouro!" e comenta cada vitória ou derrota.
+- **Trilha e efeitos 8-bit** gerados na hora com WebAudio (desligados por padrão).
+- **Controles grandes para o dedo**: botões de 60 px, segure para repetir acelerando, campo numérico editável, atalhos de teclado (↑ e ↓) e toque em qualquer emblema para viajar até ele.
+- **Progresso salvo** no navegador e link compartilhável com `?vitorias=57&derrotas=12`.
+
+A patente é sempre calculada pela função real `classifyHeroSwitch` do arquivo [`desafioRanked.js`](desafioRanked.js), importada direto pelo front (sem duplicar a regra).
+
+## Stack
+
+- **Front-end**: TypeScript + Vite, Canvas 2D e WebAudio, sem framework e sem imagens externas (toda a arte é gerada em código)
+- **Fontes**: Jersey 10 e Pixelify Sans (Google Fonts)
+- **Lógica**: JavaScript (Node.js), sem dependências
+- **Testes**: test runner nativo do Node (`node:test`)
+- **Deploy**: GitHub Pages via GitHub Actions
+
+## Como rodar
 
 ```bash
-cd web
+git clone https://github.com/leandromlmoreira/ranktier.git
+cd ranktier/web
 npm install
 npm run dev
 ```
 
-## O que ela resolve
+Para gerar a versão de produção: `npm run build` (saída em `web/dist`).
 
-Dado o número de vitórias e derrotas de um jogador, a biblioteca calcula:
-
-- **Saldo**: `vitórias - derrotas`
-- **Patente**: uma entre 7 faixas (Ferro, Bronze, Prata, Ouro, Diamante, Lendário, Imortal), definida pelo número de vitórias
-
-## Funcionalidades
-
-- Classificação de patente em 7 níveis, com faixas configuráveis
-- Cálculo de saldo entre vitórias e derrotas
-- Cinco implementações equivalentes do mesmo algoritmo (`switch`, ternário encadeado, array + `find`, laço `for` e recursão), úteis como referência de diferentes estilos de resolução do mesmo problema
-- Suíte de testes automatizados cobrindo as bordas de cada faixa
-
-## Tabela de patentes
+## A regra das patentes
 
 | Vitórias | Patente |
 |----------|---------|
-| < 10     | Ferro |
+| 0–9      | Ferro |
 | 10–20    | Bronze |
 | 21–50    | Prata |
 | 51–80    | Ouro |
 | 81–90    | Diamante |
 | 91–100   | Lendário |
-| ≥ 101    | Imortal |
+| 101+     | Imortal |
 
-## Como usar
-
-Importe qualquer uma das implementações e chame passando vitórias e derrotas:
+O saldo é `vitórias - derrotas`. A biblioteca traz cinco implementações equivalentes (`switch`, ternário encadeado, array + `find`, laço `for` e recursão), todas intercambiáveis:
 
 ```js
 const { classifyHeroSwitch } = require('./desafioRanked')
 
-const resultado = classifyHeroSwitch(18, 5)
+classifyHeroSwitch(18, 5)
 // { balance: 13, level: 'Bronze' }
 ```
-
-Todas as implementações abaixo são intercambiáveis — recebem `(vitorias, derrotas)` e retornam `{ balance, level }`:
-
-| Implementação | Função |
-|---|---|
-| `switch (true)` | `classifyHeroSwitch` |
-| operador ternário | `classifyHeroTernary` |
-| array + `find` | `classifyHeroArray` |
-| laço `for` | `classifyHeroLoop` |
-| recursão | `classifyHeroRecursive` |
-
-### Executando a demonstração
-
-```bash
-git clone https://github.com/leandromlmoreira/desafioRanked.git
-cd desafioRanked
-node desafioRanked.js
-```
-
-Saída esperada:
-
-```
-O Herói tem de saldo de 13 está no nível de Bronze
-O Herói tem de saldo de 23 está no nível de Prata
-O Herói tem de saldo de 55 está no nível de Ouro
-O Herói tem de saldo de 83 está no nível de Diamante
-O Herói tem de saldo de 140 está no nível de Imortal
-```
-
-## Stack
-
-- **JavaScript** (Node.js), sem dependências externas
-- Testes com o test runner nativo do Node (`node:test` + `node:assert/strict`)
 
 ## Testes
 
@@ -95,12 +71,12 @@ O Herói tem de saldo de 140 está no nível de Imortal
 npm test
 ```
 
-Executa `node --test`, validando as bordas de todas as faixas de patente e o cálculo de saldo nas 5 implementações (10 testes no total).
+Valida as bordas de todas as faixas e o cálculo de saldo nas cinco implementações.
 
 ## Licença
 
-Este projeto está sob a licença MIT — veja [LICENSE](./LICENSE).
+MIT, veja [LICENSE](./LICENSE).
 
 ---
 
-Base: desafio de lógica de programação em JavaScript da trilha da [Digital Innovation One (DIO)](https://www.dio.me/).
+<sub>Base: desafio de lógica de programação em JavaScript da Digital Innovation One (DIO).</sub>
