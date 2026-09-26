@@ -36,7 +36,7 @@ Projeto desenvolvido como parte do desafio da **DIO** que implementa uma calcula
 
 ```bash
 # Clone o repositório
-# git clone https://github.com/seu-usuario/desafioRanked.git
+git clone https://github.com/leandromlmoreira/desafioRanked.git
 
 # Entre no diretório
 cd desafioRanked
@@ -69,14 +69,23 @@ O Herói tem de saldo de {saldoVitorias} está no nível de {nivel}
 ```
 
 ### Exemplo de Saída:
+
+`node desafioRanked.js` roda um exemplo com cada uma das 5 implementações da classificação:
+
+| Implementação | Chamada |
+|---|---|
+| `switch (true)` | `classifyHeroSwitch(18, 5)` |
+| operador ternário | `classifyHeroTernary(30, 7)` |
+| array + `find` | `classifyHeroArray(70, 15)` |
+| laço `for` | `classifyHeroLoop(85, 2)` |
+| recursão | `classifyHeroRecursive(150, 10)` |
+
 ```
-Exemplo 1: O Herói tem de saldo de 3 está no nível de Ferro
-Exemplo 2: O Herói tem de saldo de 12 está no nível de Bronze
-Exemplo 3: O Herói tem de saldo de 25 está no nível de Prata
-Exemplo 4: O Herói tem de saldo de 40 está no nível de Ouro
-Exemplo 5: O Herói tem de saldo de 75 está no nível de Diamante
-Exemplo 6: O Herói tem de saldo de 93 está no nível de Lendário
-Exemplo 7: O Herói tem de saldo de 110 está no nível de Imortal
+O Herói tem de saldo de 13 está no nível de Bronze
+O Herói tem de saldo de 23 está no nível de Prata
+O Herói tem de saldo de 55 está no nível de Ouro
+O Herói tem de saldo de 83 está no nível de Diamante
+O Herói tem de saldo de 140 está no nível de Imortal
 ```
 
 ## 🔗 DIO
