@@ -3,21 +3,134 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#140f1f" />
     <meta
       name="description"
-      content="RankTier: acompanhe sua patente em uma vila pixel art aconchegante, do Ferro ao Imortal, ajustando vitórias e derrotas."
+      content="RankTier: suba uma montanha pixel art rumo ao templo Imortal. Cada vitória é um passo na trilha das patentes, do Ferro ao Imortal."
     />
-    <title>RankTier · Vila das Patentes</title>
+    <title>RankTier · Trilha das Patentes</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pixelify+Sans:wght@400..700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Pixelify+Sans:wght@400..700&display=swap"
       rel="stylesheet"
     />
   </head>
   <body>
-    <div id="app"></div>
+    <div class="page">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="RankTier, início">
+          <img class="brand-mark" id="brand-mark" alt="" width="36" height="36" />
+          <span class="brand-text">
+            <span class="brand-name">RankTier</span>
+            <span class="brand-tagline">Trilha das Patentes</span>
+          </span>
+        </a>
+        <div class="toolbar" role="group" aria-label="Som">
+          <button class="chip" id="music-toggle" type="button" aria-pressed="false">
+            <svg viewBox="0 0 8 8" aria-hidden="true" shape-rendering="crispEdges"><path d="M3 1h4v1H4v4H3V5H1v2h2v1H1V7H0V5h1V4h2zM6 2h1v4H6V5H4V4h2z" /></svg>
+            <span>Música</span>
+          </button>
+          <button class="chip" id="sfx-toggle" type="button" aria-pressed="false">
+            <svg viewBox="0 0 8 8" aria-hidden="true" shape-rendering="crispEdges"><path d="M0 3h2l2-2h1v6H4L2 5H0zM6 2h1v1H6zM7 3h1v2H7zM6 5h1v1H6z" /></svg>
+            <span>Efeitos</span>
+          </button>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="stage" id="stage" aria-label="Montanha das patentes">
+          <canvas id="scene" role="img" aria-label="Montanha em pixel art com uma trilha até um templo no topo"></canvas>
+
+          <div class="hud">
+            <div class="hud-rank">
+              <img class="hud-emblem" id="hud-emblem" alt="" width="64" height="64" />
+              <div class="hud-rank-text">
+                <span class="eyebrow">Patente atual</span>
+                <strong class="hud-rank-name" id="hud-rank-name">Ferro</strong>
+                <span class="hud-rank-range" id="hud-rank-range">0–9 vitórias</span>
+              </div>
+            </div>
+            <button class="chip chip-sky" id="phase-button" type="button" title="Avançar a hora do dia">
+              <svg viewBox="0 0 8 8" aria-hidden="true" shape-rendering="crispEdges"><path d="M3 0h2v1H3zM3 7h2v1H3zM0 3h1v2H0zM7 3h1v2H7zM2 2h4v4H2z" /></svg>
+              <span id="phase-label">Entardecer</span>
+            </button>
+          </div>
+
+          <div class="rank-toast" id="rank-toast" aria-hidden="true">
+            <img class="rank-toast-emblem" id="rank-toast-emblem" alt="" width="96" height="96" />
+            <span class="rank-toast-eyebrow">Nova patente</span>
+            <strong class="rank-toast-name" id="rank-toast-name">Bronze</strong>
+          </div>
+
+          <div class="dialog" id="dialog">
+            <canvas class="dialog-portrait" id="dialog-portrait" width="16" height="16" aria-hidden="true"></canvas>
+            <div class="dialog-body">
+              <span class="dialog-name">Mestra Coruja</span>
+              <p class="dialog-text" id="dialog-text" role="status" aria-live="polite"></p>
+            </div>
+            <span class="dialog-caret" aria-hidden="true"></span>
+          </div>
+        </section>
+
+        <aside class="journal" aria-label="Diário de partidas">
+          <div class="journal-intro">
+            <span class="eyebrow">Diário de partidas</span>
+            <h1 class="journal-title">Cada vitória é um degrau na montanha.</h1>
+          </div>
+
+          <div class="counters">
+            <div class="counter counter-wins">
+              <div class="counter-readout">
+                <label class="counter-label" for="wins-input">Vitórias</label>
+                <input class="counter-value" id="wins-input" type="number" min="0" max="9999" step="1" inputmode="numeric" value="0" />
+              </div>
+              <div class="counter-pads">
+                <button class="pad pad-minus" id="wins-dec" type="button" aria-label="Remover uma vitória"><span class="pad-icon" aria-hidden="true"></span></button>
+                <button class="pad pad-win" id="wins-inc" type="button" aria-label="Adicionar uma vitória"><span class="pad-icon pad-icon-plus" aria-hidden="true"></span></button>
+              </div>
+            </div>
+            <div class="counter counter-losses">
+              <div class="counter-readout">
+                <label class="counter-label" for="losses-input">Derrotas</label>
+                <input class="counter-value" id="losses-input" type="number" min="0" max="9999" step="1" inputmode="numeric" value="0" />
+              </div>
+              <div class="counter-pads">
+                <button class="pad pad-minus" id="losses-dec" type="button" aria-label="Remover uma derrota"><span class="pad-icon" aria-hidden="true"></span></button>
+                <button class="pad pad-loss" id="losses-inc" type="button" aria-label="Adicionar uma derrota"><span class="pad-icon pad-icon-plus" aria-hidden="true"></span></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="progress-card">
+            <div class="progress-head">
+              <span class="progress-balance">Saldo <strong id="balance">0</strong></span>
+              <span class="progress-next" id="progress-next">Faltam 10 para Bronze</span>
+            </div>
+            <div class="progress-track" id="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Progresso até a próxima patente"></div>
+          </div>
+
+          <div class="ranks">
+            <div class="ranks-head">
+              <h2 class="ranks-title">Patentes</h2>
+              <span class="ranks-hint">Toque para viajar</span>
+            </div>
+            <ol class="ranks-grid" id="ranks-grid"></ol>
+          </div>
+
+          <div class="journal-actions">
+            <button class="text-button" id="share-button" type="button">Copiar link do progresso</button>
+            <button class="text-button" id="reset-button" type="button">Recomeçar</button>
+          </div>
+        </aside>
+      </main>
+
+      <footer class="footer">
+        <span>Patente calculada por <code>classifyHeroSwitch</code> de <code>desafioRanked.js</code>.</span>
+        <a href="https://github.com/leandromlmoreira/ranktier">Código no GitHub</a>
+      </footer>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
