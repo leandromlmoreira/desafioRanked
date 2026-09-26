@@ -16,7 +16,6 @@ const implementacoes = {
     classifyHeroRecursive
 }
 
-// Bordas de cada faixa da tabela do README.
 const casos = [
     [0, "Ferro"],
     [9, "Ferro"],
