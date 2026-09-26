@@ -102,3 +102,12 @@ showResult(classifyHeroTernary(30, 7))
 showResult(classifyHeroArray(70, 15))
 showResult(classifyHeroLoop(85, 2))
 showResult(classifyHeroRecursive(150, 10)) 
+if (typeof module !== "undefined") {
+    module.exports = {
+        classifyHeroSwitch,
+        classifyHeroTernary,
+        classifyHeroArray,
+        classifyHeroLoop,
+        classifyHeroRecursive
+    }
+}

@@ -45,6 +45,14 @@ cd desafioRanked
 node desafioRanked.js
 ```
 
+### Testes
+
+```bash
+npm test
+```
+
+Usa o test runner nativo do Node (`node --test`, sem dependências) e confere as bordas de todas as faixas de nível e o cálculo do saldo nas 5 implementações.
+
 ## 📊 Conceitos Demonstrados
 
 - **Variáveis**
