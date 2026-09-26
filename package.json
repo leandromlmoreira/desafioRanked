@@ -1,0 +1,11 @@
+{
+  "name": "desafio-ranked",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Calculadora de partidas rankeadas (desafio DIO)",
+  "scripts": {
+    "start": "node desafioRanked.js",
+    "test": "node --test"
+  },
+  "license": "MIT"
+}
