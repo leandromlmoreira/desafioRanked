@@ -1,11 +1,16 @@
 {
-  "name": "desafio-ranked",
+  "name": "rank-tier-classifier",
   "version": "1.0.0",
   "private": true,
-  "description": "Calculadora de partidas rankeadas (desafio DIO)",
+  "description": "Classificador de patentes competitivas a partir do saldo de vitórias e derrotas.",
+  "main": "desafioRanked.js",
   "scripts": {
     "start": "node desafioRanked.js",
     "test": "node --test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/leandromlmoreira/desafioRanked.git"
   },
   "license": "MIT"
 }
