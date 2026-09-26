@@ -3,7 +3,21 @@
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/pt-BR/docs/Web/JavaScript)
 [![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 
+**[Ver ao vivo](https://leandromlmoreira.github.io/desafioRanked/)**
+
+![Preview do front-end RankTier](docs/preview.png)
+
 Biblioteca Node.js que calcula a patente competitiva de um jogador a partir do seu histórico de vitórias e derrotas, no estilo dos sistemas de ranqueada usados em jogos multiplayer.
+
+## Front-end: Vila das Patentes
+
+Em `web/` há uma interface pixel art e aconchegante feita com Vite + TypeScript. O jogador ajusta vitórias e derrotas com botões grandes de jogo, e um personagem sobe uma escadinha de patentes que vai do Ferro ao Imortal, com brilho e confete pixel a cada promoção. A patente é sempre calculada pela função real `classifyHeroSwitch` do arquivo `desafioRanked.js` deste repositório, importada diretamente pelo front (sem duplicar a lógica).
+
+```bash
+cd web
+npm install
+npm run dev
+```
 
 ## O que ela resolve
 
