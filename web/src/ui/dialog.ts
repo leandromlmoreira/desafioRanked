@@ -28,7 +28,7 @@ export class Dialog {
       this.finish()
       return
     }
-    this.textElement.closest('.dialog')?.classList.add('is-typing')
+    this.textElement.closest('[data-typewriter]')?.classList.add('is-typing')
     this.timer = window.setInterval(() => this.tick(), CHARACTER_DELAY_MS)
   }
 
@@ -49,6 +49,6 @@ export class Dialog {
   private stop(): void {
     if (this.timer !== null) window.clearInterval(this.timer)
     this.timer = null
-    this.textElement.closest('.dialog')?.classList.remove('is-typing')
+    this.textElement.closest('[data-typewriter]')?.classList.remove('is-typing')
   }
 }

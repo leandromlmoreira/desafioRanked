@@ -1,4 +1,21 @@
-type Sfx = 'win' | 'loss' | 'undo' | 'rankUp' | 'rankDown' | 'text' | 'step' | 'select'
+export type Sfx =
+  | 'win'
+  | 'loss'
+  | 'undo'
+  | 'rankUp'
+  | 'rankDown'
+  | 'text'
+  | 'step'
+  | 'select'
+  | 'hit'
+  | 'crit'
+  | 'miss'
+  | 'block'
+  | 'hurt'
+  | 'whoosh'
+  | 'victory'
+  | 'defeat'
+  | 'gear'
 
 const TEMPO = 96
 const STEP_SECONDS = 60 / TEMPO / 2
@@ -155,6 +172,40 @@ export class Chiptune {
         break
       case 'step':
         this.hiss(now, 0.025, 0.025, 2500)
+        break
+      case 'hit':
+        this.tone('square', 220, now, 0.08, 0.09, 110)
+        this.hiss(now, 0.08, 0.08, 1200)
+        break
+      case 'crit':
+        this.tone('square', 660, now, 0.05, 0.08)
+        this.tone('square', 990, now + 0.05, 0.12, 0.08)
+        this.hiss(now, 0.12, 0.1, 900)
+        break
+      case 'miss':
+        this.tone('triangle', 520, now, 0.14, 0.1, 300)
+        break
+      case 'block':
+        this.tone('square', 1568, now, 0.05, 0.06)
+        this.tone('square', 2093, now + 0.04, 0.1, 0.05)
+        this.hiss(now, 0.05, 0.05, 5000)
+        break
+      case 'hurt':
+        this.tone('square', 160, now, 0.16, 0.1, 80)
+        this.hiss(now, 0.1, 0.07, 700)
+        break
+      case 'whoosh':
+        this.hiss(now, 0.12, 0.04, 3000)
+        break
+      case 'victory':
+        ;[67, 72, 76, 79, 84].forEach((note, index) => this.tone('square', midiToHz(note), now + index * 0.1, 0.16, 0.08))
+        ;[60, 64, 67].forEach((note) => this.tone('triangle', midiToHz(note), now + 0.5, 0.7, 0.12))
+        break
+      case 'defeat':
+        ;[67, 65, 63, 60].forEach((note, index) => this.tone('triangle', midiToHz(note), now + index * 0.16, 0.24, 0.14))
+        break
+      case 'gear':
+        ;[84, 88, 91, 96].forEach((note, index) => this.tone('square', midiToHz(note), now + index * 0.06, 0.1, 0.05))
         break
     }
   }

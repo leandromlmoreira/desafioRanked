@@ -1,5 +1,6 @@
 import { buildHeroSheet, drawHeroFrame, HERO_HEIGHT, HERO_WIDTH, type HeroSheet } from '../art/hero'
 import { buildFlameSheet, buildGlow } from '../art/props'
+import type { GearId } from '../game/gear'
 import { context2d, seededRandom } from '../pixel/canvas'
 import { mixHex, mixRgb } from '../pixel/color'
 import { RANKS } from '../rankTier'
@@ -40,7 +41,7 @@ export class Scene {
   private readonly world = new LitLayer(1, 1)
   private readonly hero = new LitLayer(HERO_WIDTH, HERO_HEIGHT + HERO_HOP_ROOM)
   private readonly terrain: Terrain
-  private readonly heroSheet: HeroSheet
+  private heroSheet: HeroSheet
   private readonly flames: HTMLCanvasElement
   private readonly warmGlow = buildGlow(14, '#ffc56b')
   private readonly smallGlow = buildGlow(5, '#fff1a8')
@@ -96,6 +97,10 @@ export class Scene {
     this.snapCamera()
   }
 
+  setGear(gear: GearId[]): void {
+    this.heroSheet = buildHeroSheet(gear)
+  }
+
   setRank(rankIndex: number): void {
     this.rankIndex = rankIndex
   }
@@ -134,7 +139,7 @@ export class Scene {
   start(): void {
     let previous = performance.now()
     const frame = (now: number) => {
-      const dt = Math.min(0.05, (now - previous) / 1000)
+      const dt = Math.min(0.05, Math.max(0, (now - previous) / 1000))
       previous = now
       this.update(dt)
       this.draw()
@@ -313,7 +318,7 @@ export class Scene {
   private paintHeroShadow(ctx: CanvasRenderingContext2D, cameraX: number, cameraY: number): void {
     const { x, y } = this.walker.position
     ctx.fillStyle = 'rgba(30, 16, 40, 0.35)'
-    ctx.fillRect(Math.round(x) - HERO_WIDTH / 2 + 3 - cameraX, Math.round(y) + 1 - cameraY, 6, 1)
+    ctx.fillRect(Math.round(x) - 3 - cameraX, Math.round(y) + 1 - cameraY, 6, 1)
   }
 
   private paintHero(ambience: Ambience, cameraX: number, cameraY: number): void {

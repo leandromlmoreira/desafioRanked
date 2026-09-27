@@ -7,9 +7,9 @@
     <meta name="theme-color" content="#140f1f" />
     <meta
       name="description"
-      content="RankTier: suba uma montanha pixel art rumo ao templo Imortal. Cada vitória é um passo na trilha das patentes, do Ferro ao Imortal."
+      content="RankTier: um RPG pixel art de duelos rápidos. Suba do Ferro ao Imortal, ganhe equipamentos a cada patente e traga de volta a Chama do Topo."
     />
-    <title>RankTier · Trilha das Patentes</title>
+    <title>RankTier · A Jornada das Patentes</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -24,15 +24,19 @@
           <img class="brand-mark" id="brand-mark" alt="" width="36" height="36" />
           <span class="brand-text">
             <span class="brand-name">RankTier</span>
-            <span class="brand-tagline">Trilha das Patentes</span>
+            <span class="brand-tagline">A Jornada das Patentes</span>
           </span>
         </a>
+        <div class="mode-switch" role="tablist" aria-label="Modo de jogo">
+          <button class="mode-tab" id="tab-journey" type="button" role="tab" aria-selected="true" aria-controls="journey-panel">Jornada</button>
+          <button class="mode-tab" id="tab-free" type="button" role="tab" aria-selected="false" aria-controls="free-panel">Modo livre</button>
+        </div>
         <div class="toolbar" role="group" aria-label="Som">
-          <button class="chip" id="music-toggle" type="button" aria-pressed="false">
+          <button class="chip" id="music-toggle" type="button" aria-pressed="false" aria-label="Música">
             <svg viewBox="0 0 8 8" aria-hidden="true" shape-rendering="crispEdges"><path d="M3 1h4v1H4v4H3V5H1v2h2v1H1V7H0V5h1V4h2zM6 2h1v4H6V5H4V4h2z" /></svg>
             <span>Música</span>
           </button>
-          <button class="chip" id="sfx-toggle" type="button" aria-pressed="false">
+          <button class="chip" id="sfx-toggle" type="button" aria-pressed="false" aria-label="Efeitos sonoros">
             <svg viewBox="0 0 8 8" aria-hidden="true" shape-rendering="crispEdges"><path d="M0 3h2l2-2h1v6H4L2 5H0zM6 2h1v1H6zM7 3h1v2H7zM6 5h1v1H6z" /></svg>
             <span>Efeitos</span>
           </button>
@@ -47,12 +51,12 @@
             <div class="hud-rank">
               <img class="hud-emblem" id="hud-emblem" alt="" width="64" height="64" />
               <div class="hud-rank-text">
-                <span class="eyebrow">Patente atual</span>
+                <span class="eyebrow" id="hud-eyebrow">Patente atual</span>
                 <strong class="hud-rank-name" id="hud-rank-name">Ferro</strong>
                 <span class="hud-rank-range" id="hud-rank-range">0–9 vitórias</span>
               </div>
             </div>
-            <button class="chip chip-sky" id="phase-button" type="button" title="Avançar a hora do dia">
+            <button class="chip chip-sky" id="phase-button" type="button" title="Avançar a hora do dia" aria-label="Avançar a hora do dia">
               <svg viewBox="0 0 8 8" aria-hidden="true" shape-rendering="crispEdges"><path d="M3 0h2v1H3zM3 7h2v1H3zM0 3h1v2H0zM7 3h1v2H7zM2 2h4v4H2z" /></svg>
               <span id="phase-label">Entardecer</span>
             </button>
@@ -64,7 +68,7 @@
             <strong class="rank-toast-name" id="rank-toast-name">Bronze</strong>
           </div>
 
-          <div class="dialog" id="dialog">
+          <div class="dialog" id="dialog" data-typewriter>
             <canvas class="dialog-portrait" id="dialog-portrait" width="16" height="16" aria-hidden="true"></canvas>
             <div class="dialog-body">
               <span class="dialog-name">Mestra Coruja</span>
@@ -74,10 +78,60 @@
           </div>
         </section>
 
-        <aside class="journal" aria-label="Diário de partidas">
+        <aside class="journal" id="journey-panel" role="tabpanel" aria-labelledby="tab-journey">
           <div class="journal-intro">
-            <span class="eyebrow">Diário de partidas</span>
-            <h1 class="journal-title">Cada vitória é um degrau na montanha.</h1>
+            <span class="eyebrow" id="chapter-eyebrow">Capítulo 1 · Ferro</span>
+            <h1 class="journal-title" id="chapter-title">A fogueira da vila</h1>
+          </div>
+
+          <section class="foe-card" aria-labelledby="foe-name">
+            <div class="foe-card-top">
+              <canvas class="foe-portrait" id="foe-portrait" width="24" height="24" aria-hidden="true"></canvas>
+              <div class="foe-info">
+                <span class="eyebrow" id="foe-duel">Próximo duelo · 1 de 2</span>
+                <strong class="foe-name" id="foe-name">Gosmo</strong>
+                <span class="foe-epithet" id="foe-epithet">o lodo resmungão</span>
+                <span class="foe-danger" id="foe-danger" aria-label="Dificuldade"></span>
+              </div>
+            </div>
+            <button class="cta" id="duel-button" type="button">
+              <span class="cta-label">Duelar</span>
+              <span class="cta-stakes" id="duel-stakes">+5 vitórias</span>
+            </button>
+          </section>
+
+          <div class="stat-row">
+            <div class="stat stat-wins"><span class="stat-label">Vitórias</span><strong id="journey-wins">0</strong></div>
+            <div class="stat stat-losses"><span class="stat-label">Derrotas</span><strong id="journey-losses">0</strong></div>
+            <div class="stat stat-balance"><span class="stat-label">Saldo</span><strong id="journey-balance">0</strong></div>
+          </div>
+
+          <div class="progress-card">
+            <div class="progress-head">
+              <span class="progress-balance" id="journey-rank-label">Ferro</span>
+              <span class="progress-next" id="journey-next">Faltam 10 para Bronze</span>
+            </div>
+            <div class="progress-track" id="journey-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Progresso até a próxima patente"></div>
+          </div>
+
+          <section class="gear-card" aria-labelledby="gear-title">
+            <div class="ranks-head">
+              <h2 class="ranks-title" id="gear-title">Equipamento</h2>
+              <button class="text-button" id="inventory-button" type="button">Abrir inventário</button>
+            </div>
+            <ol class="gear-strip" id="gear-strip"></ol>
+          </section>
+
+          <div class="journal-actions">
+            <button class="text-button" id="replay-button" type="button">Rever capítulo</button>
+            <button class="text-button" id="restart-button" type="button">Recomeçar jornada</button>
+          </div>
+        </aside>
+
+        <aside class="journal" id="free-panel" role="tabpanel" aria-labelledby="tab-free" hidden>
+          <div class="journal-intro">
+            <span class="eyebrow">Modo livre · calculadora</span>
+            <h1 class="journal-title">Anote suas partidas de verdade.</h1>
           </div>
 
           <div class="counters">
@@ -121,7 +175,7 @@
 
           <div class="journal-actions">
             <button class="text-button" id="share-button" type="button">Copiar link do progresso</button>
-            <button class="text-button" id="reset-button" type="button">Recomeçar</button>
+            <button class="text-button" id="reset-button" type="button">Zerar contagem</button>
           </div>
         </aside>
       </main>
@@ -131,6 +185,101 @@
         <a href="https://github.com/leandromlmoreira/ranktier">Código no GitHub</a>
       </footer>
     </div>
+
+    <div class="overlay battle" id="battle" hidden role="dialog" aria-modal="true" aria-labelledby="battle-foe-name">
+      <div class="battle-frame">
+        <div class="battle-head">
+          <div class="plate plate-hero">
+            <span class="plate-name">Você</span>
+            <div class="hp"><span class="hp-fill" id="hero-hp-fill"></span></div>
+            <span class="hp-text" id="hero-hp-text">40/40</span>
+          </div>
+          <div class="battle-meta">
+            <span class="eyebrow" id="battle-duel">Duelo 1 de 2</span>
+            <span class="battle-stakes" id="battle-stakes">Vale +5 vitórias</span>
+          </div>
+          <div class="plate plate-foe">
+            <span class="plate-name"><strong id="battle-foe-name">Gosmo</strong> <span id="battle-foe-epithet">o lodo resmungão</span></span>
+            <div class="hp"><span class="hp-fill" id="foe-hp-fill"></span></div>
+            <span class="hp-text" id="foe-hp-text">42/42</span>
+          </div>
+        </div>
+
+        <div class="battle-viewport" id="battle-viewport">
+          <canvas id="battle-canvas"></canvas>
+          <p class="battle-bubble" id="battle-bubble"></p>
+          <div class="battle-floats" id="battle-floats" aria-live="polite"></div>
+          <div class="battle-result" id="battle-result" hidden>
+            <span class="result-eyebrow" id="result-eyebrow">Vitória!</span>
+            <strong class="result-title" id="result-title">Gosmo ficou para trás</strong>
+            <span class="result-reward" id="result-reward">+5 vitórias</span>
+            <span class="result-stats" id="result-stats"></span>
+            <button class="cta cta-compact" id="battle-continue" type="button"><span class="cta-label">Voltar à trilha</span></button>
+          </div>
+        </div>
+
+        <div class="battle-controls" id="battle-controls">
+          <p class="battle-prompt" id="battle-prompt" aria-live="polite">Sua vez! Pare o ponteiro no alvo dourado.</p>
+          <div class="meter" id="meter" data-mode="idle" aria-hidden="true">
+            <div class="meter-zone" id="meter-zone"><span class="meter-perfect" id="meter-perfect"></span></div>
+            <span class="meter-marker" id="meter-marker"></span>
+          </div>
+          <div class="battle-actions">
+            <button class="text-button" id="battle-flee" type="button">Recuar</button>
+            <button class="action-button" id="battle-action" type="button">
+              <span id="battle-action-label">Golpear!</span>
+              <kbd>Espaço</kbd>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay story" id="story" hidden role="dialog" aria-modal="true" aria-labelledby="story-title">
+      <div class="story-frame">
+        <div class="story-stage" id="story-stage">
+          <canvas id="story-canvas"></canvas>
+          <div class="story-card">
+            <span class="story-eyebrow" id="story-eyebrow">Prólogo</span>
+            <strong class="story-title" id="story-title">A noite em que a chama sumiu</strong>
+            <div class="story-rewards" id="story-rewards" hidden></div>
+          </div>
+          <button class="text-button story-skip" id="story-skip" type="button">Pular cena</button>
+        </div>
+        <div class="story-box" id="story-box" data-typewriter>
+          <canvas class="dialog-portrait" id="story-portrait" width="16" height="16" aria-hidden="true"></canvas>
+          <div class="dialog-body">
+            <span class="dialog-name" id="story-speaker">Mestra Coruja</span>
+            <p class="dialog-text" id="story-text" aria-live="polite"></p>
+          </div>
+          <div class="story-nav">
+            <span class="story-count" id="story-count">1/7</span>
+            <button class="cta cta-compact" id="story-next" type="button"><span class="cta-label" id="story-next-label">Continuar</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay sheet" id="inventory" hidden role="dialog" aria-modal="true" aria-labelledby="inventory-title">
+      <div class="sheet-frame">
+        <header class="sheet-head">
+          <div>
+            <span class="eyebrow">Mochila do aprendiz</span>
+            <h2 class="sheet-title" id="inventory-title">Inventário</h2>
+          </div>
+          <button class="chip" id="inventory-close" type="button">Fechar</button>
+        </header>
+        <div class="inventory-body">
+          <div class="inventory-hero">
+            <div class="inventory-pedestal"><canvas id="inventory-hero" width="18" height="18" aria-label="Seu herói com o equipamento atual"></canvas></div>
+            <dl class="stat-list" id="inventory-stats"></dl>
+            <p class="inventory-hint">Toque num item para equipar ou guardar. O visual do herói muda na hora.</p>
+          </div>
+          <ul class="gear-list" id="gear-list"></ul>
+        </div>
+      </div>
+    </div>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
